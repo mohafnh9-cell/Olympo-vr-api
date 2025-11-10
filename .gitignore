@@ -1,0 +1,21 @@
+# Entorno virtual
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Archivos grandes o temporales
+*.wav
+*.mp3
+*.zip
+*.log
+
+# Carpetas internas
+input/
+output/
+data/
+
+# Archivos del sistema
+.DS_Store
