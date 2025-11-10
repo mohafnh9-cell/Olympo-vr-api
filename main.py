@@ -1,16 +1,17 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import subprocess, os, re, sys, librosa, numpy as np, soundfile as sf
 from scipy.signal import butter, lfilter
 
-app = FastAPI(title="Olympo Vocal Remover", version="1.0")
+app = FastAPI(title="Olympo Vocal Remover", version="1.1")
 
 # ============================================================
 # 🟡 CORS (permite conexión desde tu frontend)
 # ============================================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # puedes limitarlo luego a tu dominio en producción (ej: https://olympo.app)
+    allow_origins=["*"],  # luego puedes limitarlo a tu dominio en producción
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -105,16 +106,29 @@ async def separate(file: UploadFile = File(...)):
         instrumental_master = master_track(instrumental, "instrumental")
 
         print("✅ Separación y mastering completados con éxito.")
+
+        # Devuelve rutas públicas para descarga desde el frontend
         return {
             "message": "✅ Separación y mastering completados con éxito",
-            "vocals_master": vocals_master,
-            "instrumental_master": instrumental_master
+            "vocals_master": f"/download?v={os.path.basename(vocals_master)}",
+            "instrumental_master": f"/download?v={os.path.basename(instrumental_master)}"
         }
 
     except subprocess.CalledProcessError as e:
         return {"error": f"❌ Error ejecutando Demucs: {e}"}
     except Exception as e:
         return {"error": f"⚠️ Error: {str(e)}"}
+
+# ============================================================
+# 🎵 Nuevo endpoint /download para servir archivos
+# ============================================================
+@app.get("/download")
+async def download_file(v: str):
+    path = os.path.join("output", v)
+    if os.path.exists(path):
+        return FileResponse(path, filename=v, media_type="audio/wav")
+    else:
+        return {"error": "Archivo no encontrado"}
 
 # ============================================================
 # 🧠 Endpoint de prueba (Render health check)
