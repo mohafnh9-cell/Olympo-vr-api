@@ -109,6 +109,12 @@ async def separate(file: UploadFile = File(...)):
         return {"error": f"❌ Error ejecutando Demucs: {e}"}
     except Exception as e:
         return {"error": f"⚠️ Error: {str(e)}"}
+    
+
+    # ✅ Endpoint de prueba para Render
+@app.get("/ping")
+async def ping():
+    return {"message": "🏆 Olympo Vocal Remover API funcionando correctamente"}
 
 # ========== Servidor local ==========
 if __name__ == "__main__":
