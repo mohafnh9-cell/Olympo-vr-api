@@ -5,16 +5,20 @@ from scipy.signal import butter, lfilter
 
 app = FastAPI(title="Olympo Vocal Remover", version="1.0")
 
-# ========== CORS (permite conexión con tu frontend) ==========
+# ============================================================
+# 🟡 CORS (permite conexión desde tu frontend)
+# ============================================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Cambia "*" por tu dominio de producción para mayor seguridad
+    allow_origins=["*"],  # puedes limitarlo luego a tu dominio en producción (ej: https://olympo.app)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ========== Utilidades de mastering ==========
+# ============================================================
+# 🎚️ Utilidades de mastering
+# ============================================================
 def butter_filter(x, sr, kind="highpass", fc=60, order=2):
     nyq = 0.5 * sr
     Wn = fc / nyq
@@ -40,14 +44,16 @@ def normalize_to_rms(x, target_dbfs=-14.0):
         y = y / peak * 0.999
     return y.astype(np.float32)
 
-# ========== Endpoint principal ==========
+# ============================================================
+# 🔊 Endpoint principal /separate
+# ============================================================
 @app.post("/separate")
 async def separate(file: UploadFile = File(...)):
     """
-    🔊 Separa voces e instrumental + aplica mastering automático
+    Separa voces e instrumental + aplica mastering automático
     """
     try:
-        # --- Limpieza del nombre del archivo ---
+        # --- Limpieza del nombre ---
         base_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', file.filename.split('.')[0])
         input_dir = "input"
         output_dir = "output"
@@ -65,7 +71,7 @@ async def separate(file: UploadFile = File(...)):
             check=True
         )
 
-        # --- Detectar automáticamente carpeta Demucs ---
+        # --- Buscar carpeta de salida ---
         demucs_subdirs = [d for d in os.listdir(output_dir) if d.startswith("htdemucs")]
         if not demucs_subdirs:
             raise RuntimeError("❌ No se encontró la carpeta de salida generada por Demucs.")
@@ -109,14 +115,17 @@ async def separate(file: UploadFile = File(...)):
         return {"error": f"❌ Error ejecutando Demucs: {e}"}
     except Exception as e:
         return {"error": f"⚠️ Error: {str(e)}"}
-    
 
-    # ✅ Endpoint de prueba para Render
+# ============================================================
+# 🧠 Endpoint de prueba (Render health check)
+# ============================================================
 @app.get("/ping")
 async def ping():
-    return {"message": "🏆 Olympo Vocal Remover API funcionando correctamente"}
+    return {"status": "ok", "message": "🏆 Olympo Vocal Remover API funcionando correctamente"}
 
-# ========== Servidor local ==========
+# ============================================================
+# 🚀 Servidor local
+# ============================================================
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
